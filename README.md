@@ -143,18 +143,20 @@ flask run
    - Annotations are saved automatically
 
 ## TODOs
+0. **User Account**
+   - Implement user authentication, authorization and session
 
-1. **Delete Functionality**
+2. **Delete Functionality**
    - Implement project deletion with cascade
    - Add image deletion capability
    - Add confirmation dialogs for deletions
 
-2. **Pagination**
+3. **Pagination**
    - Fix pagination for project images
    - Add proper page size limits
    - Implement page navigation
 
-3. **Future Enhancements**
+4. **Future Enhancements**
    - Add user authentication
    - Implement annotation categories
    - Add export functionality
