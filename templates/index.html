@@ -1,0 +1,193 @@
+{% extends 'base.html' %} {% block content %}
+<div class="w-full max-w-6xl mx-auto my-8 px-4">
+  <!-- Header Section -->
+  <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+    <div class="flex items-center justify-between">
+      <h1 class="text-3xl font-bold text-gray-800">Projects</h1>
+      <button
+        class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-200"
+        onclick="toggleCreateProjectForm()"
+        id="createProjectBtn"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 mr-2"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        New Project
+      </button>
+    </div>
+  </div>
+
+  <!-- Create Project Form -->
+  <div
+    id="createProjectForm"
+    class="hidden bg-white rounded-lg shadow-sm p-6 mb-8"
+  >
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xl font-semibold text-gray-800">Create New Project</h2>
+      <button
+        onclick="toggleCreateProjectForm()"
+        class="text-gray-400 hover:text-gray-600 transition duration-200"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </div>
+    <form
+      action="{{ url_for('create_project') }}"
+      method="POST"
+      class="space-y-4"
+    >
+      <div>
+        <label
+          for="project-name"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Project Name</label
+        >
+        <input
+          type="text"
+          id="project-name"
+          name="name"
+          placeholder="Enter project name"
+          class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+          required
+        />
+      </div>
+      <div>
+        <label
+          for="project-description"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Description</label
+        >
+        <textarea
+          id="project-description"
+          name="description"
+          placeholder="Enter project description"
+          rows="4"
+          class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+          required
+        ></textarea>
+      </div>
+      <div class="flex gap-3">
+        <button
+          type="submit"
+          class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-200"
+        >
+          Create Project
+        </button>
+        <button
+          type="button"
+          onclick="toggleCreateProjectForm()"
+          class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition duration-200"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Projects Grid -->
+  <div class="bg-white rounded-lg shadow-sm p-6">
+    {% if projects %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for project in projects %}
+      <div
+        onclick="window.location.href='/project/{{ project.id }}'"
+        class="group relative bg-gray-50 rounded-lg p-6 cursor-pointer hover:shadow-md transition duration-200"
+      >
+        <div class="flex items-start justify-between">
+          <div>
+            <h2
+              class="text-xl font-semibold text-gray-800 mb-2 group-hover:text-blue-600"
+            >
+              {{ project.name }}
+            </h2>
+            <p class="text-gray-600 mb-4">{{ project.description }}</p>
+          </div>
+          <span
+            class="inline-flex items-center bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded-full"
+          >
+            {{ project.img_count }}
+            <span class="ml-1"
+              >{{ 'image' if project.img_count == 1 else 'images' }}</span
+            >
+          </span>
+        </div>
+        <div
+          class="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 text-blue-600"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="mx-auto h-12 w-12 text-gray-400 mb-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+        />
+      </svg>
+      <p class="text-gray-600">
+        No projects available. Please create a project first.
+      </p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %} {% block script %}
+<script>
+  function toggleCreateProjectForm() {
+    const form = document.getElementById("createProjectForm");
+    const btn = document.getElementById("createProjectBtn");
+
+    if (form.classList.contains("hidden")) {
+      form.classList.remove("hidden");
+      btn.classList.add("opacity-50", "cursor-not-allowed");
+    } else {
+      form.classList.add("hidden");
+      btn.classList.remove("opacity-50", "cursor-not-allowed");
+    }
+  }
+</script>
+{% endblock %}

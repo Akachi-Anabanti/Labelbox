@@ -1,0 +1,211 @@
+{% extends 'base.html' %} {% block content %}
+<div class="w-full max-w-4xl mx-auto my-8">
+  <div class="p-6">
+    <div class="mb-4 flex justify-between items-center">
+      <h3 class="text-xl">Annotate: {{ image.filename }}</h3>
+      <button
+        id="saveButton"
+        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
+        disabled
+      >
+        Save Annotations
+      </button>
+    </div>
+    <div class="relative">
+      <!-- Loading indicator -->
+      <div
+        id="loadingIndicator"
+        class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75"
+      >
+        <div class="text-gray-600">Loading image...</div>
+      </div>
+      <!-- Canvas container with proper aspect ratio -->
+      <div class="relative" id="canvasContainer">
+        <canvas id="annotationCanvas" class="border border-gray-300"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block script %}
+<script>
+      const canvas = document.getElementById('annotationCanvas');
+      const ctx = canvas.getContext('2d');
+      const loadingIndicator = document.getElementById('loadingIndicator');
+      const saveButton = document.getElementById('saveButton');
+      const canvasContainer = document.getElementById('canvasContainer');
+
+      let drawing = false;
+      let startPos = { x: 0, y: 0 };
+      let annotations = [];
+      let imageObj = null;
+
+      // Function to resize canvas based on image dimensions
+      function resizeCanvas(imgWidth, imgHeight) {
+        const maxWidth = canvasContainer.offsetWidth;
+        const scale = Math.min(1, maxWidth / imgWidth);
+
+        canvas.width = imgWidth * scale;
+        canvas.height = imgHeight * scale;
+
+        // Store the scale factor for coordinate calculations
+        canvas.scale = scale;
+        return scale;
+      }
+
+      // Function to load and render image
+      function loadImage() {
+        const img = new Image();
+        img.src = "{{ url_for('static', filename='uploads/' + image.filename) }}";
+
+        img.onload = function() {
+          imageObj = img;
+          const scale = resizeCanvas(img.width, img.height);
+
+          // Draw image and hide loading indicator
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          loadingIndicator.style.display = 'none';
+          saveButton.disabled = false;
+
+          // Enable window resize handling
+          window.addEventListener('resize', () => {
+            const newScale = resizeCanvas(img.width, img.height);
+            redrawCanvas();
+          });
+        };
+
+        img.onerror = function() {
+          loadingIndicator.innerHTML = 'Error loading image';
+          console.error("Failed to load the image.");
+        };
+      }
+
+      // Function to redraw canvas with image and annotations
+      function redrawCanvas() {
+        if (!imageObj) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(imageObj, 0, 0, canvas.width, canvas.height);
+        drawAnnotations();
+      }
+
+      // Draw all annotations
+      function drawAnnotations() {
+        annotations.forEach(ann => {
+          ctx.strokeStyle = '#00ff00';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(
+            ann.coordinates.x * canvas.scale,
+            ann.coordinates.y * canvas.scale,
+            ann.coordinates.width * canvas.scale,
+            ann.coordinates.height * canvas.scale
+          );
+        });
+      }
+
+      // Save all annotations
+  async function saveAllAnnotations() {
+    saveButton.disabled = true;
+
+    try {
+      // First get the annotated image from canvas
+      const annotatedImageData = canvas.toDataURL('image/png');
+
+      // Create form data to send both image and annotations
+      const formData = new FormData();
+      formData.append('annotated_image', dataURItoBlob(annotatedImageData), 'annotated_image.png');
+      formData.append('data', JSON.stringify({
+        project_id: {{ image.project_id }},
+        image_url: "{{ url_for('static', filename='uploads/' + image.filename) }}",
+        annotations: annotations
+      }));
+
+      const response = await fetch('/api/annotations', {
+        method: 'POST',
+        body: formData
+      });
+      if (response.redirected) {
+      window.location.href = response.url;
+    }
+    } catch (error) {
+      console.error('Error saving annotations:', error);
+    } finally {
+      saveButton.disabled = false;
+    }
+  }
+
+  // Helper function to convert Data URI to Blob
+  function dataURItoBlob(dataURI) {
+    const byteString = atob(dataURI.split(',')[1]);
+    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+
+    return new Blob([ab], { type: mimeString });
+  }
+
+      // Mouse event handlers
+      function handleMouseDown(e) {
+        const rect = canvas.getBoundingClientRect();
+        startPos = {
+          x: (e.clientX - rect.left) / canvas.scale,
+          y: (e.clientY - rect.top) / canvas.scale
+        };
+        drawing = true;
+      }
+
+      function handleMouseMove(e) {
+        if (!drawing) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / canvas.scale;
+        const y = (e.clientY - rect.top) / canvas.scale;
+
+        redrawCanvas();
+
+        // Draw current selection rectangle
+        ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(
+          startPos.x * canvas.scale,
+          startPos.y * canvas.scale,
+          (x - startPos.x) * canvas.scale,
+          (y - startPos.y) * canvas.scale
+        );
+      }
+
+      function handleMouseUp(e) {
+        if (!drawing) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / canvas.scale;
+        const y = (e.clientY - rect.top) / canvas.scale;
+
+        const newAnnotation = {
+          label: 'Object',
+          coordinates: {
+            x: startPos.x,
+            y: startPos.y,
+            width: x - startPos.x,
+            height: y - startPos.y
+          }
+        };
+
+        annotations.push(newAnnotation);
+        drawing = false;
+        redrawCanvas();
+      }
+
+      // Event listeners
+      canvas.addEventListener('mousedown', handleMouseDown);
+      canvas.addEventListener('mousemove', handleMouseMove);
+      canvas.addEventListener('mouseup', handleMouseUp);
+      saveButton.addEventListener('click', saveAllAnnotations);
+
+      // Initialize
+      loadImage();
+</script>
+{% endblock %}

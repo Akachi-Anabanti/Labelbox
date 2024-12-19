@@ -1,0 +1,152 @@
+{% extends 'base.html' %} {% block title %}{{ project.name }} - Project
+Details{% endblock %} {% block content %}
+<div class="w-full max-w-6xl mx-auto my-8 px-4">
+  <!-- Project Header -->
+  <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+    <h2 class="text-3xl font-bold text-gray-800 mb-3">{{ project.name }}</h2>
+    <p class="text-gray-600">{{ project.description }}</p>
+  </div>
+
+  <!-- Upload Section -->
+  <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-xl font-semibold text-gray-800">Upload New Image</h3>
+    </div>
+    <form
+      id="uploadImageForm"
+      action="/image/upload/{{ project.id }}"
+      method="POST"
+      enctype="multipart/form-data"
+      class="space-y-4"
+    >
+      <div class="flex items-center justify-center w-full">
+        <label
+          class="flex flex-col w-full h-32 border-4 border-dashed hover:bg-gray-100 hover:border-gray-300"
+        >
+          <div class="flex flex-col items-center justify-center pt-7">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-12 h-12 text-gray-400 group-hover:text-gray-600"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <p
+              class="pt-1 text-sm tracking-wider text-gray-400 group-hover:text-gray-600"
+            >
+              Select an image
+            </p>
+          </div>
+          <input type="file" name="file" class="opacity-0" />
+        </label>
+      </div>
+      <button
+        type="submit"
+        class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-200"
+      >
+        Upload Image
+      </button>
+    </form>
+  </div>
+
+  <!-- Images Grid -->
+  <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="text-xl font-semibold text-gray-800">Project Images</h3>
+      <span
+        class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded"
+      >
+        {{ project.images|length }} images
+      </span>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for image in project.images %}
+      <div
+        class="group relative bg-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition duration-200"
+      >
+        <a
+          href="{{ url_for('image_annotation', image_id=image.id) }}"
+          class="block aspect-w-16 aspect-h-9"
+        >
+          {% if image.annotated_filename %}
+          <img
+            src="{{ url_for('static', filename='uploads/' + image.annotated_filename) }}"
+            alt="Annotated image"
+            class="w-full h-48 object-cover"
+          />
+          {% else %}
+          <img
+            src="{{ url_for('static', filename='uploads/' + image.filename) }}"
+            alt="Original image"
+            class="w-full h-48 object-cover"
+          />
+          {% endif %}
+        </a>
+        <div
+          class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4"
+        >
+          <p class="text-white font-medium truncate">{{ image.filename }}</p>
+          <div class="flex items-center mt-1">
+            {% if image.annotated %}
+            <span
+              class="inline-flex items-center bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
+            >
+              <span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+              Annotated
+            </span>
+            {% else %}
+            <span
+              class="inline-flex items-center bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full"
+            >
+              <span class="w-2 h-2 bg-yellow-500 rounded-full mr-1"></span>
+              Pending
+            </span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if project.images %}
+    <div class="flex items-center justify-center mt-8">
+      <nav
+        class="inline-flex rounded-md shadow-sm -space-x-px"
+        aria-label="Pagination"
+      >
+        <a
+          href="{{ url_for('project_details', project_id=project.id, page=page-1) }}"
+          class="{% if page == 1 %}opacity-50 cursor-not-allowed{% endif %} relative inline-flex items-center px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Previous
+        </a>
+        <a
+          href="{{ url_for('project_details', project_id=project.id, page=page+1) }}"
+          class="relative inline-flex items-center px-4 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Next
+        </a>
+      </nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Preview Script -->
+<script>
+  document
+    .querySelector('input[type="file"]')
+    .addEventListener("change", function (e) {
+      const fileName = e.target.files[0].name;
+      const label = this.previousElementSibling;
+      label.querySelector("p").textContent = fileName;
+    });
+</script>
+{% endblock %}
