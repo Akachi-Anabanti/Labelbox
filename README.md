@@ -45,7 +45,7 @@ LabelBox is a web-based image annotation tool that allows users to create projec
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/labelbox.git
+git clone https://github.com/Akachi-Anabanti/Labelbox.git
 cd labelbox
 ```
 
